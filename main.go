@@ -77,11 +77,25 @@ var statusCmd = &cobra.Command{
 	},
 }
 
+var serviceCmd = &cobra.Command{
+	Use:   "server",
+	Short: "代理服务",
+	Run: func(cmd *cobra.Command, args []string) {
+		err := sysproxy.Start()
+		if err != nil {
+			fmt.Println("启动代理服务失败：", err)
+			return
+		}
+		fmt.Println("代理服务已启动")
+	},
+}
+
 func init() {
 	cmd.AddCommand(sysCmd)
 	cmd.AddCommand(pacCmd)
 	cmd.AddCommand(unsetCmd)
 	cmd.AddCommand(statusCmd)
+	cmd.AddCommand(serviceCmd)
 
 	sysCmd.Flags().StringVarP(&server, "server", "s", "", "代理服务器地址")
 	sysCmd.Flags().StringVarP(&bypass, "bypass", "b", "", "绕过地址")
