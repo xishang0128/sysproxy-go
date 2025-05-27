@@ -59,6 +59,7 @@ jobs:
         GOOS: ${{matrix.jobs.goos}}
         GOARCH: ${{matrix.jobs.goarch}}
         GOAMD64: ${{matrix.jobs.goamd64}}
+        CGO_ENABLED: 0
       run: |
         go env
         if [ "${{ matrix.jobs.goos }}" == "windows" ]; then
