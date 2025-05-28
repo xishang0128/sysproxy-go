@@ -80,7 +80,7 @@ func SetProxy(proxy, bypass string) error {
 		{"-setwebproxy", addr.host, addr.port},
 		{"-setsecurewebproxy", addr.host, addr.port},
 		{"-setsocksfirewallproxy", addr.host, addr.port},
-		{"-setproxybypassdomains", bypass},
+		append([]string{"-setproxybypassdomains"}, strings.Split(bypass, ",")...),
 	}
 
 	errChan := make(chan error, len(services))
@@ -166,6 +166,7 @@ func QueryProxySettings() (*ProxyConfig, error) {
 
 	service := services[0]
 	config := &ProxyConfig{}
+	config.Proxy.Servers = make(map[string]string)
 
 	output, err := exec.Command("networksetup", "-getautoproxyurl", service).Output()
 	if err == nil && strings.Contains(string(output), "Enabled: Yes") {
@@ -179,27 +180,32 @@ func QueryProxySettings() (*ProxyConfig, error) {
 		}
 	}
 
-	output, err = exec.Command("networksetup", "-getwebproxy", service).Output()
-	if err == nil && strings.Contains(string(output), "Enabled: Yes") {
+	if enabled, host, port := parseProxy(exec.Command("networksetup", "-getwebproxy", service)); enabled {
 		config.Proxy.Enable = true
-		lines := strings.SplitSeq(string(output), "\n")
-		if config.Proxy.Servers == nil {
-			config.Proxy.Servers = make(map[string]string)
+		if addr := FormatServer(host, port); addr != "" {
+			config.Proxy.Servers["http_server"] = addr
 		}
-		var host, port string
-		for line := range lines {
-			if strings.HasPrefix(line, "Server: ") {
-				host = strings.TrimPrefix(line, "Server: ")
-			} else if strings.HasPrefix(line, "Port: ") {
-				port = strings.TrimPrefix(line, "Port: ")
-			}
-		}
-		config.Proxy.Servers["http_server"] = FormatServer(host, port)
 	}
 
-	output, err = exec.Command("networksetup", "-getproxybypassdomains", service).Output()
-	if err == nil {
-		config.Proxy.Bypass = strings.TrimSpace(string(output))
+	if enabled, host, port := parseProxy(exec.Command("networksetup", "-getsecurewebproxy", service)); enabled {
+		config.Proxy.Enable = true
+		if addr := FormatServer(host, port); addr != "" {
+			config.Proxy.Servers["https_server"] = addr
+		}
+	}
+
+	if enabled, host, port := parseProxy(exec.Command("networksetup", "-getsocksfirewallproxy", service)); enabled {
+		config.Proxy.Enable = true
+		if addr := FormatServer(host, port); addr != "" {
+			config.Proxy.Servers["socks_server"] = addr
+		}
+	}
+
+	if output, err := exec.Command("networksetup", "-getproxybypassdomains", service).Output(); err == nil {
+		bypass := strings.ReplaceAll(strings.TrimSpace(string(output)), "\n", ",")
+		if bypass != "" {
+			config.Proxy.Bypass = bypass
+		}
 	}
 
 	return config, nil
@@ -267,4 +273,20 @@ func execNetworksetupConcurrent(service string, commands [][]string) error {
 	}
 
 	return nil
+}
+
+func parseProxy(cmd *exec.Cmd) (enabled bool, host, port string) {
+	if output, err := cmd.Output(); err == nil {
+		for line := range strings.SplitSeq(strings.TrimSpace(string(output)), "\n") {
+			switch {
+			case strings.HasPrefix(line, "Enabled: Yes"):
+				enabled = true
+			case strings.HasPrefix(line, "Server: "):
+				host = strings.TrimPrefix(line, "Server: ")
+			case strings.HasPrefix(line, "Port: "):
+				port = strings.TrimPrefix(line, "Port: ")
+			}
+		}
+	}
+	return
 }
