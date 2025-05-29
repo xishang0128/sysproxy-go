@@ -23,8 +23,8 @@ var cmd = &cobra.Command{
 	Short: "系统代理设置工具",
 }
 
-var sysCmd = &cobra.Command{
-	Use:   "sys",
+var proxyCmd = &cobra.Command{
+	Use:   "proxy",
 	Short: "设置系统代理",
 	Run: func(cmd *cobra.Command, args []string) {
 		t := time.Now()
@@ -51,8 +51,8 @@ var pacCmd = &cobra.Command{
 	},
 }
 
-var unsetCmd = &cobra.Command{
-	Use:   "unset",
+var disableCmd = &cobra.Command{
+	Use:   "disable",
 	Short: "取消代理设置",
 	Run: func(cmd *cobra.Command, args []string) {
 		t := time.Now()
@@ -97,16 +97,16 @@ var serverCmd = &cobra.Command{
 }
 
 func init() {
-	cmd.AddCommand(sysCmd)
+	cmd.AddCommand(proxyCmd)
 	cmd.AddCommand(pacCmd)
-	cmd.AddCommand(unsetCmd)
+	cmd.AddCommand(disableCmd)
 	cmd.AddCommand(statusCmd)
 	cmd.AddCommand(serverCmd)
 
-	sysCmd.Flags().StringVarP(&server, "server", "s", "", "代理服务器地址")
-	sysCmd.Flags().StringVarP(&bypass, "bypass", "b", "", "绕过地址")
+	proxyCmd.Flags().StringVarP(&server, "server", "s", "", "代理服务器地址")
+	proxyCmd.Flags().StringVarP(&bypass, "bypass", "b", "", "绕过地址")
 
-	pacCmd.Flags().StringVarP(&pacUrl, "pacurl", "p", "", "pac 地址")
+	pacCmd.Flags().StringVarP(&pacUrl, "url", "u", "", "pac 地址")
 
 	serverCmd.Flags().StringVarP(&listen, "listen", "l", "/tmp/sparkle-helper.sock", "监听地址")
 }
