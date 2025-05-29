@@ -4,7 +4,9 @@ package sysproxy
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -31,7 +33,9 @@ func router() *chi.Mux {
 }
 
 func status(w http.ResponseWriter, r *http.Request) {
+	t := time.Now()
 	status, err := QueryProxySettings()
+	log.Println("QueryProxySettings took:", time.Since(t))
 	if err != nil {
 		sendError(w, err)
 		return
@@ -46,7 +50,9 @@ func pac(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	t := time.Now()
 	err := SetPac(req.Url)
+	log.Println("SetPac took:", time.Since(t), "\nURL:", req.Url)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -61,7 +67,9 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	t := time.Now()
 	err := SetProxy(req.Server, req.Bypass)
+	log.Println("SetProxy took:", time.Since(t), "\nserver:", req.Server, "\nbypass:", req.Bypass)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -70,7 +78,9 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 }
 
 func disable(w http.ResponseWriter, r *http.Request) {
+	t := time.Now()
 	err := DisableProxy()
+	log.Println("DisableProxy took:", time.Since(t))
 	if err != nil {
 		sendError(w, err)
 		return

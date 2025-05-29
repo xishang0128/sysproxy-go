@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sysproxy/sysproxy"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -24,12 +25,13 @@ var sysCmd = &cobra.Command{
 	Use:   "sys",
 	Short: "设置系统代理",
 	Run: func(cmd *cobra.Command, args []string) {
+		t := time.Now()
 		err := sysproxy.SetProxy(server, bypass)
 		if err != nil {
 			fmt.Println("设置代理失败：", err)
 			return
 		}
-		fmt.Println("代理设置成功")
+		fmt.Println("代理设置成功, 耗时:", time.Since(t))
 	},
 }
 
@@ -37,12 +39,13 @@ var pacCmd = &cobra.Command{
 	Use:   "pac",
 	Short: "设置 PAC 代理",
 	Run: func(cmd *cobra.Command, args []string) {
+		t := time.Now()
 		err := sysproxy.SetPac(pacUrl)
 		if err != nil {
 			fmt.Println("设置 PAC 代理失败：", err)
 			return
 		}
-		fmt.Println("PAC 代理设置成功")
+		fmt.Println("PAC 代理设置成功, 耗时:", time.Since(t))
 	},
 }
 
@@ -50,12 +53,13 @@ var unsetCmd = &cobra.Command{
 	Use:   "unset",
 	Short: "取消代理设置",
 	Run: func(cmd *cobra.Command, args []string) {
+		t := time.Now()
 		err := sysproxy.DisableProxy()
 		if err != nil {
 			fmt.Println("取消代理设置失败：", err)
 			return
 		}
-		fmt.Println("代理设置已取消")
+		fmt.Println("代理设置已取消, 耗时:", time.Since(t))
 	},
 }
 
