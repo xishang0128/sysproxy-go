@@ -14,6 +14,8 @@ var (
 	server string
 	bypass string
 	pacUrl string
+
+	listen string
 )
 
 var cmd = &cobra.Command{
@@ -31,7 +33,7 @@ var sysCmd = &cobra.Command{
 			fmt.Println("设置代理失败：", err)
 			return
 		}
-		fmt.Println("代理设置成功, 耗时:", time.Since(t))
+		fmt.Println("代理设置成功，耗时：", time.Since(t))
 	},
 }
 
@@ -45,7 +47,7 @@ var pacCmd = &cobra.Command{
 			fmt.Println("设置 PAC 代理失败：", err)
 			return
 		}
-		fmt.Println("PAC 代理设置成功, 耗时:", time.Since(t))
+		fmt.Println("PAC 代理设置成功，耗时：", time.Since(t))
 	},
 }
 
@@ -59,7 +61,7 @@ var unsetCmd = &cobra.Command{
 			fmt.Println("取消代理设置失败：", err)
 			return
 		}
-		fmt.Println("代理设置已取消, 耗时:", time.Since(t))
+		fmt.Println("代理设置已取消，耗时：", time.Since(t))
 	},
 }
 
@@ -81,11 +83,11 @@ var statusCmd = &cobra.Command{
 	},
 }
 
-var serviceCmd = &cobra.Command{
+var serverCmd = &cobra.Command{
 	Use:   "server",
-	Short: "代理服务",
+	Short: "启动监听服务",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := sysproxy.Start()
+		err := sysproxy.Start(listen)
 		if err != nil {
 			fmt.Println("启动代理服务失败：", err)
 			return
@@ -99,12 +101,14 @@ func init() {
 	cmd.AddCommand(pacCmd)
 	cmd.AddCommand(unsetCmd)
 	cmd.AddCommand(statusCmd)
-	cmd.AddCommand(serviceCmd)
+	cmd.AddCommand(serverCmd)
 
 	sysCmd.Flags().StringVarP(&server, "server", "s", "", "代理服务器地址")
 	sysCmd.Flags().StringVarP(&bypass, "bypass", "b", "", "绕过地址")
 
 	pacCmd.Flags().StringVarP(&pacUrl, "pacurl", "p", "", "pac 地址")
+
+	serverCmd.Flags().StringVarP(&listen, "listen", "l", "/tmp/sparkle-helper.sock", "监听地址")
 }
 
 func main() {

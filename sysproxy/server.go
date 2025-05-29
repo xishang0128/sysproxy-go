@@ -14,8 +14,8 @@ import (
 
 var unixServer *http.Server
 
-func Start() error {
-	if err := startServer("/tmp/sparkle-helper.sock", StartUnix); err != nil {
+func Start(l string) error {
+	if err := startServer(l, StartUnix); err != nil {
 		return err
 	}
 	return nil
