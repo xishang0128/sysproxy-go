@@ -4,18 +4,18 @@ package sysproxy
 
 import "fmt"
 
-func DisableProxy(_ bool) error {
+func DisableProxy(_ string, _ bool) error {
 	return fmt.Errorf("不支持的操作系统")
 }
 
-func SetProxy(proxy, bypass string, _ bool) error {
+func SetProxy(proxy, bypass, _ string, _ bool) error {
 	return fmt.Errorf("不支持的操作系统")
 }
 
-func SetPac(server string, _ bool) error {
+func SetPac(server, _ string, _ bool) error {
 	return fmt.Errorf("不支持的操作系统")
 }
 
-func QueryProxySettings(_ bool) (map[string]any, error) {
+func QueryProxySettings(_ string, _ bool) (map[string]any, error) {
 	return nil, fmt.Errorf("不支持的操作系统")
 }

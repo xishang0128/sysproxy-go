@@ -12,10 +12,18 @@ import (
 	"sync"
 )
 
-func DisableProxy(onlyWithDevice bool) error {
-	services, err := getNetworkServices(onlyWithDevice)
-	if err != nil {
-		return err
+func DisableProxy(device string, onlyWithDevice bool) error {
+	var (
+		services []string
+		err      error
+	)
+	if device != "" {
+		services = []string{device}
+	} else {
+		services, err = getNetworkServices(onlyWithDevice)
+		if err != nil {
+			return err
+		}
 	}
 
 	commands := [][]string{
@@ -52,9 +60,9 @@ func DisableProxy(onlyWithDevice bool) error {
 	return nil
 }
 
-func SetProxy(proxy, bypass string, onlyWithDevice bool) error {
+func SetProxy(proxy, bypass, device string, onlyWithDevice bool) error {
 	if proxy == "" || bypass == "" {
-		config, err := QueryProxySettings(onlyWithDevice)
+		config, err := QueryProxySettings(device, onlyWithDevice)
 		if err != nil {
 			return err
 		}
@@ -72,9 +80,17 @@ func SetProxy(proxy, bypass string, onlyWithDevice bool) error {
 		return fmt.Errorf("invalid proxy address: %s", proxy)
 	}
 
-	services, err := getNetworkServices(false)
-	if err != nil {
-		return err
+	var (
+		services []string
+		err      error
+	)
+	if device != "" {
+		services = []string{device}
+	} else {
+		services, err = getNetworkServices(onlyWithDevice)
+		if err != nil {
+			return err
+		}
 	}
 
 	commands := [][]string{
@@ -112,18 +128,26 @@ func SetProxy(proxy, bypass string, onlyWithDevice bool) error {
 	return nil
 }
 
-func SetPac(pacUrl string, onlyWithDevice bool) error {
+func SetPac(pacUrl, device string, onlyWithDevice bool) error {
 	if pacUrl == "" {
-		config, err := QueryProxySettings(onlyWithDevice)
+		config, err := QueryProxySettings(device, onlyWithDevice)
 		if err != nil {
 			return err
 		}
 		pacUrl = config.PAC.URL
 	}
 
-	services, err := getNetworkServices(false)
-	if err != nil {
-		return err
+	var (
+		services []string
+		err      error
+	)
+	if device != "" {
+		services = []string{device}
+	} else {
+		services, err = getNetworkServices(onlyWithDevice)
+		if err != nil {
+			return err
+		}
 	}
 
 	commands := [][]string{
@@ -161,10 +185,18 @@ func SetPac(pacUrl string, onlyWithDevice bool) error {
 	return nil
 }
 
-func QueryProxySettings(onlyWithDevice bool) (*ProxyConfig, error) {
-	services, err := getNetworkServices(true)
-	if err != nil {
-		return nil, err
+func QueryProxySettings(device string, onlyWithDevice bool) (*ProxyConfig, error) {
+	var (
+		services []string
+		err      error
+	)
+	if device != "" {
+		services = []string{device}
+	} else {
+		services, err = getNetworkServices(onlyWithDevice)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	service := services[0]
