@@ -3,14 +3,17 @@
 package sysproxy
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 )
 
-func DisableProxy() error {
-	services, err := getNetworkServices()
+func DisableProxy(onlyWithDevice bool) error {
+	services, err := getNetworkServices(onlyWithDevice)
 	if err != nil {
 		return err
 	}
@@ -49,9 +52,9 @@ func DisableProxy() error {
 	return nil
 }
 
-func SetProxy(proxy, bypass string) error {
+func SetProxy(proxy, bypass string, onlyWithDevice bool) error {
 	if proxy == "" || bypass == "" {
-		config, err := QueryProxySettings()
+		config, err := QueryProxySettings(onlyWithDevice)
 		if err != nil {
 			return err
 		}
@@ -69,7 +72,7 @@ func SetProxy(proxy, bypass string) error {
 		return fmt.Errorf("invalid proxy address: %s", proxy)
 	}
 
-	services, err := getNetworkServices()
+	services, err := getNetworkServices(false)
 	if err != nil {
 		return err
 	}
@@ -109,16 +112,16 @@ func SetProxy(proxy, bypass string) error {
 	return nil
 }
 
-func SetPac(pacUrl string) error {
+func SetPac(pacUrl string, onlyWithDevice bool) error {
 	if pacUrl == "" {
-		config, err := QueryProxySettings()
+		config, err := QueryProxySettings(onlyWithDevice)
 		if err != nil {
 			return err
 		}
 		pacUrl = config.PAC.URL
 	}
 
-	services, err := getNetworkServices()
+	services, err := getNetworkServices(false)
 	if err != nil {
 		return err
 	}
@@ -158,8 +161,8 @@ func SetPac(pacUrl string) error {
 	return nil
 }
 
-func QueryProxySettings() (*ProxyConfig, error) {
-	services, err := getNetworkServices()
+func QueryProxySettings(onlyWithDevice bool) (*ProxyConfig, error) {
+	services, err := getNetworkServices(true)
 	if err != nil {
 		return nil, err
 	}
@@ -211,33 +214,42 @@ func QueryProxySettings() (*ProxyConfig, error) {
 	return config, nil
 }
 
-func getNetworkServices() ([]string, error) {
-	output, err := exec.Command("networksetup", "-listnetworkserviceorder").Output()
+func getNetworkServices(onlyWithDevice bool) ([]string, error) {
+	cmd := exec.Command("networksetup", "-listnetworkserviceorder")
+	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("无法执行 networksetup 命令: %s", err)
+		return nil, fmt.Errorf("无法执行 networksetup 命令: %w", err)
 	}
-
 	if len(output) == 0 {
 		return nil, fmt.Errorf("networksetup 命令没有输出")
 	}
 
-	var services []string
-	lines := strings.SplitSeq(string(output), "\n")
-	for line := range lines {
-		if len(line) == 0 {
-			continue
-		}
+	ordinalRegex := regexp.MustCompile(`^\(\d+\)\s*(.+)$`)
+	deviceRegex := regexp.MustCompile(`Device:\s*([^\s,)]+)`)
 
-		if strings.HasPrefix(line, "(") {
-			parts := strings.Split(line, ")")
-			if len(parts) < 2 {
+	var services []string
+	scanner := bufio.NewScanner(bytes.NewReader(output))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if m := ordinalRegex.FindStringSubmatch(line); m != nil {
+			service := strings.TrimSpace(m[1])
+
+			device := ""
+			if scanner.Scan() {
+				next := scanner.Text()
+				if dm := deviceRegex.FindStringSubmatch(next); dm != nil {
+					device = dm[1]
+				}
+			}
+			if onlyWithDevice && device == "" {
 				continue
 			}
-			service := strings.TrimSpace(parts[1])
-			if service != "" {
-				services = append(services, service)
-			}
+			services = append(services, service)
 		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("扫描输出时出错: %w", err)
 	}
 
 	if len(services) == 0 {

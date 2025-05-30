@@ -64,16 +64,16 @@ func refreshAndApplySettings(options []InternetPerConnOption) error {
 	return nil
 }
 
-func DisableProxy() error {
+func DisableProxy(_ bool) error {
 	return refreshAndApplySettings([]InternetPerConnOption{{
 		dwOption: INTERNET_PER_CONN_FLAGS,
 		dwValue:  PROXY_TYPE_DIRECT,
 	}})
 }
 
-func SetProxy(proxy, bypass string) error {
+func SetProxy(proxy, bypass string, _ bool) error {
 	if proxy == "" || bypass == "" {
-		config, err := QueryProxySettings()
+		config, err := QueryProxySettings(false)
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func SetProxy(proxy, bypass string) error {
 	})
 }
 
-func SetPac(pacUrl string) error {
+func SetPac(pacUrl string, _ bool) error {
 	if pacUrl == "" {
 		return refreshAndApplySettings([]InternetPerConnOption{
 			{dwOption: INTERNET_PER_CONN_FLAGS, dwValue: PROXY_TYPE_AUTO_PROXY_URL},
@@ -118,7 +118,7 @@ func SetPac(pacUrl string) error {
 	})
 }
 
-func QueryProxySettings() (*ProxyConfig, error) {
+func QueryProxySettings(_ bool) (*ProxyConfig, error) {
 	options := [4]InternetPerConnOption{
 		{dwOption: INTERNET_PER_CONN_FLAGS},
 		{dwOption: INTERNET_PER_CONN_PROXY_SERVER},
