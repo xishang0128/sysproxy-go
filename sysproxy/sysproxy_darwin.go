@@ -6,13 +6,14 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"net"
 	"os/exec"
 	"regexp"
 	"strings"
 	"sync"
 )
 
-func DisableProxy(device string, onlyWithDevice bool) error {
+func DisableProxy(device string, onlyActiveDevice bool) error {
 	var (
 		services []string
 		err      error
@@ -20,7 +21,7 @@ func DisableProxy(device string, onlyWithDevice bool) error {
 	if device != "" {
 		services = []string{device}
 	} else {
-		services, err = getNetworkServices(onlyWithDevice)
+		services, err = getNetworkServices(onlyActiveDevice)
 		if err != nil {
 			return err
 		}
@@ -60,9 +61,9 @@ func DisableProxy(device string, onlyWithDevice bool) error {
 	return nil
 }
 
-func SetProxy(proxy, bypass, device string, onlyWithDevice bool) error {
+func SetProxy(proxy, bypass, device string, onlyActiveDevice bool) error {
 	if proxy == "" || bypass == "" {
-		config, err := QueryProxySettings(device, onlyWithDevice)
+		config, err := QueryProxySettings(device, onlyActiveDevice)
 		if err != nil {
 			return err
 		}
@@ -87,7 +88,7 @@ func SetProxy(proxy, bypass, device string, onlyWithDevice bool) error {
 	if device != "" {
 		services = []string{device}
 	} else {
-		services, err = getNetworkServices(onlyWithDevice)
+		services, err = getNetworkServices(onlyActiveDevice)
 		if err != nil {
 			return err
 		}
@@ -128,9 +129,9 @@ func SetProxy(proxy, bypass, device string, onlyWithDevice bool) error {
 	return nil
 }
 
-func SetPac(pacUrl, device string, onlyWithDevice bool) error {
+func SetPac(pacUrl, device string, onlyActiveDevice bool) error {
 	if pacUrl == "" {
-		config, err := QueryProxySettings(device, onlyWithDevice)
+		config, err := QueryProxySettings(device, onlyActiveDevice)
 		if err != nil {
 			return err
 		}
@@ -144,7 +145,7 @@ func SetPac(pacUrl, device string, onlyWithDevice bool) error {
 	if device != "" {
 		services = []string{device}
 	} else {
-		services, err = getNetworkServices(onlyWithDevice)
+		services, err = getNetworkServices(onlyActiveDevice)
 		if err != nil {
 			return err
 		}
@@ -185,7 +186,7 @@ func SetPac(pacUrl, device string, onlyWithDevice bool) error {
 	return nil
 }
 
-func QueryProxySettings(device string, onlyWithDevice bool) (*ProxyConfig, error) {
+func QueryProxySettings(device string, onlyActiveDevice bool) (*ProxyConfig, error) {
 	var (
 		services []string
 		err      error
@@ -193,7 +194,7 @@ func QueryProxySettings(device string, onlyWithDevice bool) (*ProxyConfig, error
 	if device != "" {
 		services = []string{device}
 	} else {
-		services, err = getNetworkServices(onlyWithDevice)
+		services, err = getNetworkServices(onlyActiveDevice)
 		if err != nil {
 			return nil, err
 		}
@@ -246,7 +247,18 @@ func QueryProxySettings(device string, onlyWithDevice bool) (*ProxyConfig, error
 	return config, nil
 }
 
-func getNetworkServices(onlyWithDevice bool) ([]string, error) {
+func getNetworkServices(onlyActiveDevice bool) ([]string, error) {
+	var (
+		ifaces []net.Interface
+		err    error
+	)
+	if onlyActiveDevice {
+		ifaces, err = net.Interfaces()
+		if err != nil {
+			return nil, fmt.Errorf("无法获取网络接口: %w", err)
+		}
+	}
+
 	cmd := exec.Command("networksetup", "-listnetworkserviceorder")
 	output, err := cmd.Output()
 	if err != nil {
@@ -273,10 +285,29 @@ func getNetworkServices(onlyWithDevice bool) ([]string, error) {
 					device = dm[1]
 				}
 			}
-			if onlyWithDevice && device == "" {
-				continue
+
+			if onlyActiveDevice {
+				var matchIface *net.Interface
+				for _, i := range ifaces {
+					if i.Name != device {
+						continue
+					}
+					if i.Flags&net.FlagUp == 0 || i.Flags&net.FlagRunning == 0 {
+						continue
+					}
+					addrs, _ := i.Addrs()
+					if len(addrs) == 0 {
+						continue
+					}
+					matchIface = &i
+					break
+				}
+				if matchIface != nil {
+					services = append(services, service)
+				}
+			} else {
+				services = append(services, service)
 			}
-			services = append(services, service)
 		}
 	}
 
@@ -285,7 +316,7 @@ func getNetworkServices(onlyWithDevice bool) ([]string, error) {
 	}
 
 	if len(services) == 0 {
-		return nil, fmt.Errorf("未找到网络服务")
+		return nil, fmt.Errorf("未找到活跃的网络服务")
 	}
 
 	return services, nil

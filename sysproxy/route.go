@@ -17,8 +17,8 @@ type Request struct {
 	Bypass string `json:"bypass"`
 	Url    string `json:"url"`
 
-	Device         string `json:"device,omitempty"`
-	OnlyWithDevice bool   `json:"only_with_device,omitempty"`
+	Device           string `json:"device,omitempty"`
+	OnlyActiveDevice bool   `json:"only_active_device,omitempty"`
 }
 
 type Response struct {
@@ -37,7 +37,7 @@ func router() *chi.Mux {
 
 func status(w http.ResponseWriter, r *http.Request) {
 	t := time.Now()
-	status, err := QueryProxySettings("", false)
+	status, err := QueryProxySettings("", true)
 	log.Println("QueryProxySettings took:", time.Since(t))
 	if err != nil {
 		sendError(w, err)
@@ -54,7 +54,7 @@ func pac(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := time.Now()
-	err := SetPac(req.Url, req.Device, req.OnlyWithDevice)
+	err := SetPac(req.Url, req.Device, req.OnlyActiveDevice)
 	log.Println("SetPac took:", time.Since(t), "\nURL:", req.Url)
 	if err != nil {
 		sendError(w, err)
@@ -71,7 +71,7 @@ func proxy(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := time.Now()
-	err := SetProxy(req.Server, req.Bypass, req.Device, req.OnlyWithDevice)
+	err := SetProxy(req.Server, req.Bypass, req.Device, req.OnlyActiveDevice)
 	log.Println("SetProxy took:", time.Since(t), "\nserver:", req.Server, "\nbypass:", req.Bypass)
 	if err != nil {
 		sendError(w, err)
@@ -88,7 +88,7 @@ func disable(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t := time.Now()
-	err := DisableProxy(req.Device, req.OnlyWithDevice)
+	err := DisableProxy(req.Device, req.OnlyActiveDevice)
 	log.Println("DisableProxy took:", time.Since(t))
 	if err != nil {
 		sendError(w, err)
