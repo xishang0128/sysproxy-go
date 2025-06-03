@@ -8,11 +8,11 @@ func DisableProxy(_ string, _ bool) error {
 	return fmt.Errorf("不支持的操作系统")
 }
 
-func SetProxy(proxy, bypass, _ string, _ bool) error {
+func SetProxy(_, _, _ string, _ bool) error {
 	return fmt.Errorf("不支持的操作系统")
 }
 
-func SetPac(server, _ string, _ bool) error {
+func SetPac(_, _ string, _ bool) error {
 	return fmt.Errorf("不支持的操作系统")
 }
 

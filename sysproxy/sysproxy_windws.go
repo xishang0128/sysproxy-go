@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/windows/registry"
 )
 
 const (
@@ -45,18 +47,37 @@ type (
 )
 
 func refreshAndApplySettings(options []InternetPerConnOption) error {
-	list := InternetPerConnOptionList{
-		dwSize:        uint32(unsafe.Sizeof(InternetPerConnOptionList{})),
-		dwOptionCount: uint32(len(options)),
-		pOptions:      &options[0],
+	connectionNames, err := enumAllConnectionNames()
+	if err != nil {
+		return fmt.Errorf("获取连接名失败：%v", err)
 	}
 
-	if ret, _, err := procInternetSetOptionW.Call(
-		0,
-		INTERNET_OPTION_PER_CONNECTION_OPTION,
-		uintptr(unsafe.Pointer(&list)),
-		unsafe.Sizeof(list)); ret == 0 {
-		return fmt.Errorf("设置选项失败：%v", err)
+	connectionNames = append(connectionNames, "")
+
+	for _, name := range connectionNames {
+		var pszConn *uint16
+		if name != "" {
+			ptr, err := syscall.UTF16PtrFromString(name)
+			if err != nil {
+				return err
+			}
+			pszConn = ptr
+		}
+
+		list := InternetPerConnOptionList{
+			dwSize:        uint32(unsafe.Sizeof(InternetPerConnOptionList{})),
+			pszConnection: pszConn,
+			dwOptionCount: uint32(len(options)),
+			pOptions:      &options[0],
+		}
+
+		if ret, _, err := procInternetSetOptionW.Call(
+			0,
+			INTERNET_OPTION_PER_CONNECTION_OPTION,
+			uintptr(unsafe.Pointer(&list)),
+			unsafe.Sizeof(list)); ret == 0 {
+			return fmt.Errorf("设置 %s 连接失败：%v", name, err)
+		}
 	}
 
 	procInternetSetOptionW.Call(0, INTERNET_OPTION_PROXY_SETTINGS_CHANGED, 0, 0)
@@ -163,4 +184,19 @@ func getString(val uintptr) string {
 		len  int
 		cap  int
 	}{val, 1024, 1024})))
+}
+
+func enumAllConnectionNames() ([]string, error) {
+	key, err := registry.OpenKey(registry.CURRENT_USER, `Software\Microsoft\Windows\CurrentVersion\Internet Settings\Connections`, registry.READ)
+	if err != nil {
+		return nil, err
+	}
+	defer key.Close()
+
+	names, err := key.ReadValueNames(0)
+	if err != nil {
+		return nil, err
+	}
+
+	return names, nil
 }
