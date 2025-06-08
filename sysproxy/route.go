@@ -28,7 +28,10 @@ type Response struct {
 
 func router() *chi.Mux {
 	r := chi.NewRouter()
-	r.Get("/*", status)
+	r.Get("/status", status)
+	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		sendJSON(w, "ok", "pong")
+	})
 	r.Post("/pac", pac)
 	r.Post("/proxy", proxy)
 	r.Post("/disable", disable)
