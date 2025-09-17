@@ -31,7 +31,7 @@ func (e *Environment) Init() error {
 	e.desktop = desktop
 	e.isKde = desktop == "KDE"
 	e.isKde6 = e.isKde && os.Getenv("KDE_SESSION_VERSION") == "6"
-	e.isGnome = strings.Contains(desktop, "GNOME") || desktop == "Unity"
+	e.isGnome = strings.Contains(desktop, "GNOME") || desktop == "Unity" || desktop == "X-Cinnamon"
 	e.initialized = true
 
 	return nil
