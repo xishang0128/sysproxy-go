@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sysproxy/sysproxy"
 	"time"
+
+	"github.com/xishang0128/sysproxy-go/sysproxy"
 
 	"github.com/spf13/cobra"
 )

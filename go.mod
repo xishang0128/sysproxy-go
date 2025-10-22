@@ -1,4 +1,4 @@
-module sysproxy
+module github.com/xishang0128/sysproxy-go
 
 go 1.24.2
 
