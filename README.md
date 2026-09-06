@@ -211,7 +211,7 @@ HKEY_USERS\<sid>\Software\Microsoft\Windows\CurrentVersion\Internet Settings
 Linux 通过桌面环境工具修改代理：
 
 - KDE: `kwriteconfig5` / `kwriteconfig6`
-- GNOME、Unity、Cinnamon、niri: `gsettings`
+- GNOME、Unity、Cinnamon、XFCE、MATE、Budgie、Pantheon、niri: `gsettings`
 
 监听代理变更时，GNOME 使用 `gsettings monitor`，KDE 使用 inotify 监听 `kioslaverc`。
 

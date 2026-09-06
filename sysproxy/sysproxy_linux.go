@@ -33,10 +33,17 @@ func (e *Environment) Init(opt *Options) error {
 
 	e.ctx = ctx
 	e.desktop = desktop
-	e.isKde = desktop == "KDE"
+	for name := range strings.SplitSeq(desktop, ":") {
+		switch strings.ToLower(strings.TrimSpace(name)) {
+		case "kde":
+			e.isKde = true
+		case "gnome", "gnome-classic", "gnome-flashback", "unity", "x-cinnamon", "cinnamon",
+			"xfce", "mate", "budgie", "budgie-desktop", "pantheon", "niri":
+			e.isGnome = true
+		}
+	}
 	e.isKde6 = e.isKde && ctx.envMap["KDE_SESSION_VERSION"] == "6"
-	e.isGnome = strings.Contains(desktop, "GNOME") || desktop == "Unity" ||
-		desktop == "X-Cinnamon" || desktop == "niri"
+	e.isGnome = e.isGnome && !e.isKde
 	e.initialized = true
 
 	return nil
